@@ -2,6 +2,18 @@
 // Адаптировано из VBA
 
 (function() {
+    // Вспомогательная функция для получения значения ячейки
+    function getCellValue(sheet, row, col) {
+        var colLetter = String.fromCharCode(64 + col); // A=1 -> A, B=2 -> B
+        return sheet.GetRange(colLetter + row).GetValue();
+    }
+    
+    // Вспомогательная функция для установки значения ячейки
+    function setCellValue(sheet, row, col, value) {
+        var colLetter = String.fromCharCode(64 + col);
+        sheet.GetRange(colLetter + row).SetValue(value);
+    }
+    
     // Основная функция AUTOSET
     function autoSet() {
         var oSheetBase = Api.GetSheet("Base");
@@ -23,58 +35,57 @@
         var maxUsedRow = oSheetEmployees.GetUsedRange().GetRows().GetCount();
         var maxUsedRowServ = oSheetDeals.GetUsedRange().GetRows().GetCount();
         
-        var summServ = oSheetDeals.GetCells().GetCell(2, 3).GetValue();
-        var summServItog = oSheetDeals.GetCells().GetCell(2, 4).GetValue();
+        var summServ = getCellValue(oSheetDeals, 2, 3);
+        var summServItog = getCellValue(oSheetDeals, 2, 4);
         
         // Цикл по сделкам
         for (var j = firstRow; j <= maxUsedRowServ; j++) {
-            while (oSheetDeals.GetCells().GetCell(j, 4).GetValue() > 10 && 
-                   oSheetEmployees.GetCells().GetCell(2, 10).GetValue() > 0) {
+            while (getCellValue(oSheetDeals, j, 4) > 10 && 
+                   getCellValue(oSheetEmployees, 2, 10) > 0) {
                 
                 for (var i = firstRow; i <= maxUsedRow; i++) {
-                    if (oSheetDeals.GetCells().GetCell(j, 4).GetValue() < 10 || 
-                        oSheetEmployees.GetCells().GetCell(2, 10).GetValue() === 0) {
+                    if (getCellValue(oSheetDeals, j, 4) < 10 || 
+                        getCellValue(oSheetEmployees, 2, 10) === 0) {
                         break;
                     }
                     
-                    if (oSheetEmployees.GetCells().GetCell(i, 6).GetValue() > 0.01) {
-                        var stavka = oSheetEmployees.GetCells().GetCell(i, 2).GetValue();
-                        var hours = Math.round(oSheetDeals.GetCells().GetCell(j, 4).GetValue() / stavka * 100) / 100;
-                        var availableHours = oSheetEmployees.GetCells().GetCell(i, 6).GetValue();
+                    if (getCellValue(oSheetEmployees, i, 6) > 0.01) {
+                        var stavka = getCellValue(oSheetEmployees, i, 2);
+                        var hours = Math.round(getCellValue(oSheetDeals, j, 4) / stavka * 100) / 100;
+                        var availableHours = getCellValue(oSheetEmployees, i, 6);
                         
                         if (hours > availableHours) {
                             // Запись в Base
-                            oSheetBase.GetCells().GetCell(n, 1).SetValue(oSheetEmployees.GetCells().GetCell(2, 8).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 2).SetValue(oSheetDeals.GetCells().GetCell(j, 1).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 3).SetValue(oSheetDeals.GetCells().GetCell(j, 2).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 4).SetValue(oSheetEmployees.GetCells().GetCell(i, 1).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 5).SetValue(oSheetEmployees.GetCells().GetCell(i, 4).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 7).SetValue(oSheetEmployees.GetCells().GetCell(i, 5).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 9).SetValue(oSheetDeals.GetCells().GetCell(i, 5).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 8).SetValue(Math.round(availableHours * 100) / 100);
+                            setCellValue(oSheetBase, n, 1, getCellValue(oSheetEmployees, 2, 8));
+                            setCellValue(oSheetBase, n, 2, getCellValue(oSheetDeals, j, 1));
+                            setCellValue(oSheetBase, n, 3, getCellValue(oSheetDeals, j, 2));
+                            setCellValue(oSheetBase, n, 4, getCellValue(oSheetEmployees, i, 1));
+                            setCellValue(oSheetBase, n, 5, getCellValue(oSheetEmployees, i, 4));
+                            setCellValue(oSheetBase, n, 7, getCellValue(oSheetEmployees, i, 5));
+                            setCellValue(oSheetBase, n, 9, getCellValue(oSheetDeals, i, 5));
+                            setCellValue(oSheetBase, n, 8, Math.round(availableHours * 100) / 100);
                             
                             // Обновление остатков
-                            var newServValue = Math.round((oSheetDeals.GetCells().GetCell(j, 4).GetValue() - availableHours * stavka) * 100) / 100;
-                            oSheetDeals.GetCells().GetCell(j, 4).SetValue(newServValue);
-                            oSheetEmployees.GetCells().GetCell(i, 6).SetValue(0);
+                            var newServValue = Math.round((getCellValue(oSheetDeals, j, 4) - availableHours * stavka) * 100) / 100;
+                            setCellValue(oSheetDeals, j, 4, newServValue);
+                            setCellValue(oSheetEmployees, i, 6, 0);
                             
                             n++;
                         } else {
-                            oSheetBase.GetCells().GetCell(n, 1).SetValue(oSheetEmployees.GetCells().GetCell(2, 8).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 2).SetValue(oSheetDeals.GetCells().GetCell(j, 1).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 3).SetValue(oSheetDeals.GetCells().GetCell(j, 2).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 4).SetValue(oSheetEmployees.GetCells().GetCell(i, 1).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 5).SetValue(oSheetEmployees.GetCells().GetCell(i, 4).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 7).SetValue(oSheetEmployees.GetCells().GetCell(i, 5).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 9).SetValue(oSheetDeals.GetCells().GetCell(i, 5).GetValue());
-                            oSheetBase.GetCells().GetCell(n, 8).SetValue(hours);
+                            setCellValue(oSheetBase, n, 1, getCellValue(oSheetEmployees, 2, 8));
+                            setCellValue(oSheetBase, n, 2, getCellValue(oSheetDeals, j, 1));
+                            setCellValue(oSheetBase, n, 3, getCellValue(oSheetDeals, j, 2));
+                            setCellValue(oSheetBase, n, 4, getCellValue(oSheetEmployees, i, 1));
+                            setCellValue(oSheetBase, n, 5, getCellValue(oSheetEmployees, i, 4));
+                            setCellValue(oSheetBase, n, 7, getCellValue(oSheetEmployees, i, 5));
+                            setCellValue(oSheetBase, n, 9, getCellValue(oSheetDeals, i, 5));
+                            setCellValue(oSheetBase, n, 8, hours);
                             
-                            oSheetEmployees.GetCells().GetCell(i, 6).SetValue(
-                                oSheetEmployees.GetCells().GetCell(i, 6).GetValue() - hours
-                            );
+                            setCellValue(oSheetEmployees, i, 6, 
+                                getCellValue(oSheetEmployees, i, 6) - hours);
                             
-                            var newServValue2 = Math.round((oSheetDeals.GetCells().GetCell(j, 4).GetValue() - hours * stavka) * 100) / 100;
-                            oSheetDeals.GetCells().GetCell(j, 4).SetValue(newServValue2);
+                            var newServValue2 = Math.round((getCellValue(oSheetDeals, j, 4) - hours * stavka) * 100) / 100;
+                            setCellValue(oSheetDeals, j, 4, newServValue2);
                         }
                     }
                 }
@@ -91,24 +102,20 @@
             var oSheetEmployees = Api.GetSheet("Сотрудники");
             var oSheetDeals = Api.GetSheet("Сделки");
             
-            var oCell = oSheetEmployees.GetRange("I2");
-            
             // Проверяем, изменилась ли ячейка I2
             if (oRange.GetCells().GetCell(1, 1).GetAddress() === "$I$2") {
                 var maxUsedRow = oSheetEmployees.GetUsedRange().GetRows().GetCount();
                 var maxUsedRowServ = oSheetDeals.GetUsedRange().GetRows().GetCount();
-                var valueI2 = oSheetEmployees.GetCells().GetCell(2, 9).GetValue();
+                var valueI2 = getCellValue(oSheetEmployees, 2, 9);
                 
                 // Заполняем колонку F значением из I2
                 for (var i = 2; i <= maxUsedRow; i++) {
-                    oSheetEmployees.GetCells().GetCell(i, 6).SetValue(valueI2);
+                    setCellValue(oSheetEmployees, i, 6, valueI2);
                 }
                 
                 // Копируем значения из колонки C в D
                 for (var i = 2; i <= maxUsedRowServ; i++) {
-                    oSheetDeals.GetCells().GetCell(i, 4).SetValue(
-                        oSheetDeals.GetCells().GetCell(i, 3).GetValue()
-                    );
+                    setCellValue(oSheetDeals, i, 4, getCellValue(oSheetDeals, i, 3));
                 }
             }
         }
