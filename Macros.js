@@ -1,144 +1,105 @@
-// OnlyOffice макрос
-// Адаптировано из VBA
+// OnlyOffice макрос - адаптировано из VBA
+// Скопируй этот код в редактор скриптов OnlyOffice
 
-(function() {
-    // Получаем лист по имени
-    function getSheetByName(sheetName) {
-        var doc = Api.GetDocument();
-        var sheets = doc.Sheets;
-        for (var i = 0; i < sheets.length; i++) {
-            if (sheets[i].Name === sheetName) {
-                return sheets[i];
-            }
-        }
-        return null;
-    }
-    
-    // Вспомогательная функция для получения значения ячейки
-    function getCellValue(sheet, row, col) {
-        var colLetter = String.fromCharCode(64 + col);
-        return sheet.GetRange(colLetter + row).GetValue();
-    }
-    
-    // Вспомогательная функция для установки значения ячейки
-    function setCellValue(sheet, row, col, value) {
-        var colLetter = String.fromCharCode(64 + col);
-        sheet.GetRange(colLetter + row).SetValue(value);
-    }
-    
-    // Основная функция AUTOSET
-    function autoSet() {
-        var oSheetBase = getSheetByName("Base");
-        var oSheetEmployees = getSheetByName("Сотрудники");
-        var oSheetDeals = getSheetByName("Сделки");
-        
-        if (!oSheetBase || !oSheetEmployees || !oSheetDeals) {
-            console.log("Не найдены нужные листы!");
-            return;
-        }
-        
-        // Очистка листа Base
-        oSheetBase.GetRange("A2:R900").ClearContents();
-        
-        var n = 2;
-        var firstRow = 2;
-        
-        // Получаем последние заполненные строки
-        var maxUsedRow = oSheetEmployees.GetUsedRange().GetRows().GetCount();
-        var maxUsedRowServ = oSheetDeals.GetUsedRange().GetRows().GetCount();
-        
-        var summServ = getCellValue(oSheetDeals, 2, 3);
-        var summServItog = getCellValue(oSheetDeals, 2, 4);
-        
-        // Цикл по сделкам
-        for (var j = firstRow; j <= maxUsedRowServ; j++) {
-            while (getCellValue(oSheetDeals, j, 4) > 10 && 
-                   getCellValue(oSheetEmployees, 2, 10) > 0) {
-                
-                for (var i = firstRow; i <= maxUsedRow; i++) {
-                    if (getCellValue(oSheetDeals, j, 4) < 10 || 
-                        getCellValue(oSheetEmployees, 2, 10) === 0) {
-                        break;
-                    }
-                    
-                    if (getCellValue(oSheetEmployees, i, 6) > 0.01) {
-                        var stavka = getCellValue(oSheetEmployees, i, 2);
-                        var hours = Math.round(getCellValue(oSheetDeals, j, 4) / stavka * 100) / 100;
-                        var availableHours = getCellValue(oSheetEmployees, i, 6);
-                        
-                        if (hours > availableHours) {
-                            // Запись в Base
-                            setCellValue(oSheetBase, n, 1, getCellValue(oSheetEmployees, 2, 8));
-                            setCellValue(oSheetBase, n, 2, getCellValue(oSheetDeals, j, 1));
-                            setCellValue(oSheetBase, n, 3, getCellValue(oSheetDeals, j, 2));
-                            setCellValue(oSheetBase, n, 4, getCellValue(oSheetEmployees, i, 1));
-                            setCellValue(oSheetBase, n, 5, getCellValue(oSheetEmployees, i, 4));
-                            setCellValue(oSheetBase, n, 7, getCellValue(oSheetEmployees, i, 5));
-                            setCellValue(oSheetBase, n, 9, getCellValue(oSheetDeals, i, 5));
-                            setCellValue(oSheetBase, n, 8, Math.round(availableHours * 100) / 100);
-                            
-                            // Обновление остатков
-                            var newServValue = Math.round((getCellValue(oSheetDeals, j, 4) - availableHours * stavka) * 100) / 100;
-                            setCellValue(oSheetDeals, j, 4, newServValue);
-                            setCellValue(oSheetEmployees, i, 6, 0);
-                            
-                            n++;
-                        } else {
-                            setCellValue(oSheetBase, n, 1, getCellValue(oSheetEmployees, 2, 8));
-                            setCellValue(oSheetBase, n, 2, getCellValue(oSheetDeals, j, 1));
-                            setCellValue(oSheetBase, n, 3, getCellValue(oSheetDeals, j, 2));
-                            setCellValue(oSheetBase, n, 4, getCellValue(oSheetEmployees, i, 1));
-                            setCellValue(oSheetBase, n, 5, getCellValue(oSheetEmployees, i, 4));
-                            setCellValue(oSheetBase, n, 7, getCellValue(oSheetEmployees, i, 5));
-                            setCellValue(oSheetBase, n, 9, getCellValue(oSheetDeals, i, 5));
-                            setCellValue(oSheetBase, n, 8, hours);
-                            
-                            setCellValue(oSheetEmployees, i, 6, 
-                                getCellValue(oSheetEmployees, i, 6) - hours);
-                            
-                            var newServValue2 = Math.round((getCellValue(oSheetDeals, j, 4) - hours * stavka) * 100) / 100;
-                            setCellValue(oSheetDeals, j, 4, newServValue2);
-                        }
-                    }
-                }
-                n++;
-            }
+// Получение листа по имени
+function getSheet(sheetName) {
+    var doc = Api.GetDocument();
+    var sheets = doc.Sheets;
+    for (var i = 0; i < sheets.length; i++) {
+        if (sheets[i].Name === sheetName) {
+            return sheets[i];
         }
     }
+    return null;
+}
+
+// Получение значения ячейки
+function getCell(sheet, row, col) {
+    var colLetter = String.fromCharCode(64 + col);
+    return sheet.GetRange(colLetter + row).GetValue();
+}
+
+// Установка значения ячейки
+function setCell(sheet, row, col, value) {
+    var colLetter = String.fromCharCode(64 + col);
+    sheet.GetRange(colLetter + row).SetValue(value);
+}
+
+// Главная функция AUTOSET
+function AUTOSET() {
+    var sheetBase = getSheet("Base");
+    var sheetEmp = getSheet("Сотрудники");
+    var sheetDeals = getSheet("Сделки");
     
-    // Обработчик события изменения листа
-    function onSheetChange(oSheet, oRange) {
-        var sheetName = oSheet.GetName();
-        
-        if (sheetName === "Сотрудники" || sheetName === "Сделки") {
-            var oSheetEmployees = getSheetByName("Сотрудники");
-            var oSheetDeals = getSheetByName("Сделки");
+    if (!sheetBase || !sheetEmp || !sheetDeals) {
+        Api.ShowMessage("Листы не найдены!");
+        return;
+    }
+    
+    // Очистка
+    sheetBase.GetRange("A2:R900").ClearContents();
+    
+    var firstRow = 2;
+    var n = 2;
+    
+    // Количество строк
+    var maxRowEmp = sheetEmp.GetUsedRange().GetRows().GetCount();
+    var maxRowDeals = sheetDeals.GetUsedRange().GetRows().GetCount();
+    
+    // Цикл по сделкам
+    for (var j = firstRow; j <= maxRowDeals; j++) {
+        while (getCell(sheetDeals, j, 4) > 10 && getCell(sheetEmp, 2, 10) > 0) {
             
-            // Проверяем, изменилась ли ячейка I2
-            if (oRange.GetCells().GetCell(1, 1).GetAddress() === "$I$2") {
-                var maxUsedRow = oSheetEmployees.GetUsedRange().GetRows().GetCount();
-                var maxUsedRowServ = oSheetDeals.GetUsedRange().GetRows().GetCount();
-                var valueI2 = getCellValue(oSheetEmployees, 2, 9);
-                
-                // Заполняем колонку F значением из I2
-                for (var i = 2; i <= maxUsedRow; i++) {
-                    setCellValue(oSheetEmployees, i, 6, valueI2);
+            for (var i = firstRow; i <= maxRowEmp; i++) {
+                if (getCell(sheetDeals, j, 4) < 10 || getCell(sheetEmp, 2, 10) === 0) {
+                    break;
                 }
                 
-                // Копируем значения из колонки C в D
-                for (var i = 2; i <= maxUsedRowServ; i++) {
-                    setCellValue(oSheetDeals, i, 4, getCellValue(oSheetDeals, i, 3));
+                var availHours = getCell(sheetEmp, i, 6);
+                if (availHours > 0.01) {
+                    var stavka = getCell(sheetEmp, i, 2);
+                    var dealValue = getCell(sheetDeals, j, 4);
+                    var hour = Math.round(dealValue / stavka * 100) / 100;
+                    
+                    if (hour > availHours) {
+                        // Запись в Base
+                        setCell(sheetBase, n, 1, getCell(sheetEmp, 2, 8));   // Период
+                        setCell(sheetBase, n, 2, getCell(sheetDeals, j, 1));  // Сделка
+                        setCell(sheetBase, n, 3, getCell(sheetDeals, j, 2));  // Услуга
+                        setCell(sheetBase, n, 4, getCell(sheetEmp, i, 1));    // ФИО
+                        setCell(sheetBase, n, 5, getCell(sheetEmp, i, 4));    // Таб номер
+                        setCell(sheetBase, n, 7, getCell(sheetEmp, i, 5));    // Подразделение
+                        setCell(sheetBase, n, 9, getCell(sheetDeals, i, 5));  // РВ
+                        setCell(sheetBase, n, 8, Math.round(availHours * 100) / 100); // Часы
+                        
+                        // Обновление остатков
+                        var newDealValue = Math.round((dealValue - availHours * stavka) * 100) / 100;
+                        setCell(sheetDeals, j, 4, newDealValue);
+                        setCell(sheetEmp, i, 6, 0);
+                        
+                        n++;
+                    } else {
+                        setCell(sheetBase, n, 1, getCell(sheetEmp, 2, 8));
+                        setCell(sheetBase, n, 2, getCell(sheetDeals, j, 1));
+                        setCell(sheetBase, n, 3, getCell(sheetDeals, j, 2));
+                        setCell(sheetBase, n, 4, getCell(sheetEmp, i, 1));
+                        setCell(sheetBase, n, 5, getCell(sheetEmp, i, 4));
+                        setCell(sheetBase, n, 7, getCell(sheetEmp, i, 5));
+                        setCell(sheetBase, n, 9, getCell(sheetDeals, i, 5));
+                        setCell(sheetBase, n, 8, hour);
+                        
+                        setCell(sheetEmp, i, 6, availHours - hour);
+                        var newDealValue2 = Math.round((dealValue - hour * stavka) * 100) / 100;
+                        setCell(sheetDeals, j, 4, newDealValue2);
+                    }
                 }
             }
+            n++;
         }
     }
     
-    // Регистрация обработчика (для автоматического запуска)
-    // Api.attachEvent("sheetChange", onSheetChange);
-    
-    // Экспорт
-    return {
-        AUTOSET: autoSet,
-        onSheetChange: onSheetChange
-    };
-})();
+    Api.ShowMessage("Готово! Записей: " + (n - 2));
+}
+
+// Для запуска просто вызови AUTOSET()
+//AUTOSET();
