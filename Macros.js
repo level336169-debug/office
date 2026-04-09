@@ -2,9 +2,21 @@
 // Адаптировано из VBA
 
 (function() {
+    // Получаем лист по имени
+    function getSheetByName(sheetName) {
+        var doc = Api.GetDocument();
+        var sheets = doc.Sheets;
+        for (var i = 0; i < sheets.length; i++) {
+            if (sheets[i].Name === sheetName) {
+                return sheets[i];
+            }
+        }
+        return null;
+    }
+    
     // Вспомогательная функция для получения значения ячейки
     function getCellValue(sheet, row, col) {
-        var colLetter = String.fromCharCode(64 + col); // A=1 -> A, B=2 -> B
+        var colLetter = String.fromCharCode(64 + col);
         return sheet.GetRange(colLetter + row).GetValue();
     }
     
@@ -16,9 +28,9 @@
     
     // Основная функция AUTOSET
     function autoSet() {
-        var oSheetBase = Api.GetSheet("Base");
-        var oSheetEmployees = Api.GetSheet("Сотрудники");
-        var oSheetDeals = Api.GetSheet("Сделки");
+        var oSheetBase = getSheetByName("Base");
+        var oSheetEmployees = getSheetByName("Сотрудники");
+        var oSheetDeals = getSheetByName("Сделки");
         
         if (!oSheetBase || !oSheetEmployees || !oSheetDeals) {
             console.log("Не найдены нужные листы!");
@@ -99,8 +111,8 @@
         var sheetName = oSheet.GetName();
         
         if (sheetName === "Сотрудники" || sheetName === "Сделки") {
-            var oSheetEmployees = Api.GetSheet("Сотрудники");
-            var oSheetDeals = Api.GetSheet("Сделки");
+            var oSheetEmployees = getSheetByName("Сотрудники");
+            var oSheetDeals = getSheetByName("Сделки");
             
             // Проверяем, изменилась ли ячейка I2
             if (oRange.GetCells().GetCell(1, 1).GetAddress() === "$I$2") {
